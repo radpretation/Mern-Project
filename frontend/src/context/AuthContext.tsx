@@ -5,11 +5,9 @@ import { User, UserType } from '../types';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  certificateKey: string | null;
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
-  setDeviceCertificate: (certToken: string) => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -22,9 +20,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('panacea_token'));
-  const [certificateKey, setCertificateKey] = useState<string | null>(() =>
-    localStorage.getItem('panacea_device_cert')
-  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -61,21 +56,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('panacea_user');
   };
 
-  const setDeviceCertificate = (certToken: string) => {
-    setCertificateKey(certToken);
-    localStorage.setItem('panacea_device_cert', certToken);
-  };
-
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
-        certificateKey,
         isLoading,
         login,
         logout,
-        setDeviceCertificate,
         refreshUser,
       }}
     >

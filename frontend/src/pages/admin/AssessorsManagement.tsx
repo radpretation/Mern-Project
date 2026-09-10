@@ -193,13 +193,6 @@ export const AssessorsManagement: React.FC = () => {
                     <td className="py-3.5 px-4 text-slate-600">{a.phoneNumber || '—'}</td>
                     <td className="py-3.5 px-4 text-right space-x-1">
                       <button
-                        onClick={() => window.open(`/api/admin/users/${a._id}/certificate`, '_blank')}
-                        title="Download Device Certificate (.txt)"
-                        className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
-                      >
-                        <Download className="w-4 h-4 text-slate-500" />
-                      </button>
-                      <button
                         onClick={() => {
                           setSelectedAssessor(a);
                           setRevealedPassword(null);

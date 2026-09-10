@@ -49,7 +49,6 @@ router.post('/customers', adminController.createCustomer);
 router.put('/customers/:id', adminController.updateCustomer);
 router.delete('/customers/:id', adminController.deleteCustomer);
 router.post('/users/:id/reveal-password', adminController.revealUserPassword);
-router.get('/users/:id/certificate', adminController.downloadCertificate);
 
 // Customer Processes
 router.get('/customers/:customerId/processes', adminController.getProcessesByCustomer);

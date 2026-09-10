@@ -11,7 +11,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 export class AuthController {
   public async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password, certificateKey } = req.body;
+      const { email, password } = req.body;
 
       if (!email || !password) {
         res.status(400).json({ success: false, message: 'Email and password are required.' });
@@ -83,7 +83,6 @@ export class AuthController {
           companyNumber: user.companyNumber,
           phoneNumber: user.phoneNumber,
           address: user.address,
-          isCertificateVerified: user.isCertificateVerified,
           permissions: user.permissions,
         },
       });
@@ -113,49 +112,11 @@ export class AuthController {
           companyNumber: user.companyNumber,
           phoneNumber: user.phoneNumber,
           address: user.address,
-          isCertificateVerified: user.isCertificateVerified,
           permissions: user.permissions,
         },
       });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  public async installCertificate(req: Request, res: Response): Promise<void> {
-    try {
-      let certificateContent = '';
-
-      if (req.file) {
-        certificateContent = req.file.buffer.toString('utf-8').trim();
-      } else if (req.body.certificateContent) {
-        certificateContent = String(req.body.certificateContent).trim();
-      }
-
-      if (!certificateContent) {
-        res.status(400).json({ success: false, message: 'Certificate file or content is required.' });
-        return;
-      }
-
-      const deviceFingerprint = computeDeviceFingerprint(req);
-      const boundToken = `${certificateContent}${deviceFingerprint}`;
-
-      // Set cookie for browser parity
-      res.cookie('certificate_key', boundToken, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        sameSite: 'lax',
-      });
-
-      res.status(200).json({
-        success: true,
-        message: 'Device certificate installed and bound to this workstation successfully.',
-        deviceFingerprint,
-        boundToken,
-      });
-    } catch (error: any) {
-      console.error('Install certificate error:', error);
-      res.status(500).json({ success: false, message: 'Failed to process workstation certificate.' });
     }
   }
 

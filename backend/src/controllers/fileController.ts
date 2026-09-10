@@ -54,7 +54,7 @@ export class FileController {
         }
       }
 
-      const allowedTypes = ['evidence', 'qsa', 'qa', 'consultants', 'consultant', 'report', 'certificate'];
+      const allowedTypes = ['evidence', 'qsa', 'qa', 'consultants', 'consultant', 'report'];
 
       if (!type || !allowedTypes.includes(type.toLowerCase())) {
         res.status(400).json({ success: false, message: 'Invalid file category requested.' });

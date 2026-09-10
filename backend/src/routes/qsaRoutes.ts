@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { qsaController } from '../controllers/qsaController';
 import { requireAuth, requireRole } from '../middleware/authMiddleware';
-import { verifyDeviceCertificate } from '../middleware/verifyDeviceCertificate';
 import { UserType } from '../constants/roles';
 import { uploadQsaStorage } from '../controllers/fileController';
 
 const router = Router();
 
-router.use(requireAuth, requireRole([UserType.QSA]), verifyDeviceCertificate);
+router.use(requireAuth, requireRole([UserType.QSA]));
 
 router.get('/dashboard', qsaController.getDashboard);
 router.get('/audit-view', qsaController.getAuditView);

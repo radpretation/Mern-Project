@@ -138,17 +138,13 @@ export const CustomersManagement: React.FC = () => {
     }
   };
 
-  const handleDownloadCertificate = (id: string, name: string) => {
-    window.open(`/api/admin/users/${id}/certificate`, '_blank');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Customer Organizations</h2>
           <p className="text-sm text-slate-500 font-medium">
-            Manage enterprise clients, certificate keys, and compliance audit scopes.
+            Manage enterprise clients and compliance audit scopes.
           </p>
         </div>
         <button
@@ -169,20 +165,19 @@ export const CustomersManagement: React.FC = () => {
                 <th className="py-3.5 px-4">Company Number</th>
                 <th className="py-3.5 px-4">Email Address</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">2FA Key Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
                     Loading customer accounts...
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
                     No customer organizations registered yet.
                   </td>
                 </tr>
@@ -202,19 +197,6 @@ export const CustomersManagement: React.FC = () => {
                         {c.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      {c.isCertificateVerified === 1 ? (
-                        <span className="inline-flex items-center space-x-1 text-[11px] text-slate-700 font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
-                          <span>Bound to Workstation</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 text-[11px] text-slate-400 font-medium">
-                          <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Unverified</span>
-                        </span>
-                      )}
-                    </td>
                     <td className="py-3.5 px-4 text-right space-x-1">
                       <button
                         onClick={() => openProcessModal(c)}
@@ -222,13 +204,6 @@ export const CustomersManagement: React.FC = () => {
                         className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
                       >
                         <Layers className="w-4 h-4 text-slate-500" />
-                      </button>
-                      <button
-                        onClick={() => handleDownloadCertificate(c._id, c.fullName)}
-                        title="Download Device Certificate (.txt)"
-                        className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
-                      >
-                        <Download className="w-4 h-4 text-slate-500" />
                       </button>
                       <button
                         onClick={() => {

@@ -22,7 +22,6 @@ import {
   CmsPage,
 } from '../models';
 import { UserType, UserStatus } from '../constants/roles';
-import { certificateService } from '../services/certificateService';
 import { mailService } from '../services/mailService';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
@@ -111,11 +110,8 @@ export class AdminController {
         pwdString: rawPassword,
         userType: UserType.CUSTOMER,
         status: UserStatus.ACTIVE,
-        isCertificateVerified: 0,
       });
 
-      // Generate initial certificate
-      newUser.certificateKey = certificateService.generateCustomerCertificate(newUser);
       await newUser.save();
 
       await mailService.sendAccountWelcomeMail(newUser.email, newUser.fullName, rawPassword, 'Customer Organization');
@@ -200,48 +196,6 @@ export class AdminController {
         success: true,
         password: targetUser.pwdString || '(No plaintext password stored)',
       });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: formatErrorMessage(error) });
-    }
-  }
-
-  // --- Certificate Downloads ---
-  public async downloadCertificate(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const user = await User.findById(id);
-      if (!user) {
-        res.status(404).json({ success: false, message: 'User not found.' });
-        return;
-      }
-
-      let content = '';
-      let filename = 'certificate.txt';
-
-      if (user.userType === UserType.CUSTOMER) {
-        content = certificateService.generateCustomerCertificate(user);
-        user.certificateKey = content;
-        user.isCertificateVerified = 0;
-        user.newCertificateKey = '';
-        await user.save();
-        filename = 'certificate.txt';
-      } else if (user.userType === UserType.QSA) {
-        const cert = certificateService.generateAuditorCertificate(user, 'qsa');
-        content = cert.content;
-        filename = cert.filename;
-      } else if (user.userType === UserType.QA) {
-        const cert = certificateService.generateAuditorCertificate(user, 'qa');
-        content = cert.content;
-        filename = cert.filename;
-      } else if (user.userType === UserType.CONSULTANT) {
-        const cert = certificateService.generateAuditorCertificate(user, 'consultant');
-        content = cert.content;
-        filename = cert.filename;
-      }
-
-      res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.send(content);
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
     }

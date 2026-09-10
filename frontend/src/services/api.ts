@@ -7,16 +7,11 @@ const api = axios.create({
   },
 });
 
-// Intercept requests to attach JWT & Device Certificate token
+// Intercept requests to attach JWT
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('panacea_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  const certificateKey = localStorage.getItem('panacea_device_cert');
-  if (certificateKey) {
-    config.headers['x-device-certificate'] = certificateKey;
   }
 
   return config;

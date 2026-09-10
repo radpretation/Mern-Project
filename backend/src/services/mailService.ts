@@ -34,7 +34,7 @@ export class MailService {
               <div style="background-color: #f3f4f6; padding: 12px; border-left: 4px solid #1e3a8a; margin: 15px 0;">
                 <p style="margin: 0; font-size: 16px;">Your new temporary password is: <strong style="color: #1e3a8a;">${temporaryPassword}</strong></p>
               </div>
-              <p>Please log in and install your authorized workstation certificate.</p>
+              <p>Please log in using your email and temporary password to access your dashboard.</p>
             </div>
             <div style="text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 10px;">
               &copy; ${new Date().getFullYear()} Panacea Infosec. All rights reserved.
@@ -76,7 +76,7 @@ export class MailService {
                 <p style="margin: 0;">Username: <strong>${toEmail}</strong></p>
                 <p style="margin: 5px 0 0 0;">Temporary Password: <strong style="color: #1e3a8a;">${temporaryPassword}</strong></p>
               </div>
-              <p>Your administrator will securely deliver your workstation authorization certificate file.</p>
+              <p>Please log in using your credentials to get started.</p>
             </div>
             <div style="text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 10px;">
               &copy; ${new Date().getFullYear()} Panacea Infosec. All rights reserved.

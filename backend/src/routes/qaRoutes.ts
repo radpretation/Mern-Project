@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { qaController } from '../controllers/qaController';
 import { requireAuth, requireRole } from '../middleware/authMiddleware';
-import { verifyDeviceCertificate } from '../middleware/verifyDeviceCertificate';
 import { UserType } from '../constants/roles';
 import { uploadQaStorage } from '../controllers/fileController';
 
 const router = Router();
 
-router.use(requireAuth, requireRole([UserType.QA]), verifyDeviceCertificate);
+router.use(requireAuth, requireRole([UserType.QA]));
 
 router.get('/dashboard', qaController.getDashboard);
 router.get('/audit-view', qaController.getAuditView);

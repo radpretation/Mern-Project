@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { customerController } from '../controllers/customerController';
 import { requireAuth, requireRole } from '../middleware/authMiddleware';
-import { verifyDeviceCertificate } from '../middleware/verifyDeviceCertificate';
 import { UserType } from '../constants/roles';
 import { uploadEvidenceStorage } from '../controllers/fileController';
 
 const router = Router();
 
-router.use(requireAuth, requireRole([UserType.CUSTOMER]), verifyDeviceCertificate);
+router.use(requireAuth, requireRole([UserType.CUSTOMER]));
 
 router.get('/dashboard', customerController.getDashboard);
 router.get('/processes/:processId/services', customerController.getProcessServices);

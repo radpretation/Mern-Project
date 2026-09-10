@@ -18,7 +18,6 @@ export interface User {
   address?: string;
   status: 'active' | 'inactive' | 'delete';
   userType: UserType;
-  isCertificateVerified: number;
   permissions?: string;
 }
 

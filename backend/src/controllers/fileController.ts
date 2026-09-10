@@ -5,16 +5,27 @@ import multer from 'multer';
 import { EvidenceDocument, AssessorDocument, ComplianceReport } from '../models';
 import { formatErrorMessage } from '../utils/formatError';
 
-const UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
+let UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
 
-// Ensure upload folders exist
-const folders = ['evidence', 'qsa', 'qa', 'consultants', 'report'];
-folders.forEach((f) => {
-  const dir = path.join(UPLOADS_ROOT, f);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+// Ensure upload folders exist (with fallback for serverless read-only filesystems like Vercel/Lambda)
+try {
+  const folders = ['evidence', 'qsa', 'qa', 'consultants', 'report'];
+  folders.forEach((f) => {
+    const dir = path.join(UPLOADS_ROOT, f);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+} catch (err) {
+  UPLOADS_ROOT = path.join('/tmp', 'uploads');
+  const folders = ['evidence', 'qsa', 'qa', 'consultants', 'report'];
+  folders.forEach((f) => {
+    const dir = path.join(UPLOADS_ROOT, f);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+}
 
 // Multer Storage Configuration preserving legacy naming: [basename]-[rand4].[ext]
 const createMulterStorage = (subfolder: string) =>

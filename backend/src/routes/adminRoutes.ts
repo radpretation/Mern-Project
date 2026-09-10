@@ -7,9 +7,16 @@ import { requireAuth, requireRole } from '../middleware/authMiddleware';
 import { UserType } from '../constants/roles';
 
 // Configure Multer for ROC / AOC Report Uploads
-const reportUploadDir = path.resolve(__dirname, '../../../uploads/report');
-if (!fs.existsSync(reportUploadDir)) {
-  fs.mkdirSync(reportUploadDir, { recursive: true });
+let reportUploadDir = path.resolve(__dirname, '../../../uploads/report');
+try {
+  if (!fs.existsSync(reportUploadDir)) {
+    fs.mkdirSync(reportUploadDir, { recursive: true });
+  }
+} catch (err) {
+  reportUploadDir = path.join('/tmp', 'uploads', 'report');
+  if (!fs.existsSync(reportUploadDir)) {
+    fs.mkdirSync(reportUploadDir, { recursive: true });
+  }
 }
 
 const reportStorage = multer.diskStorage({

@@ -1,11 +1,34 @@
 import axios from 'axios';
 
+const apiBase = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBase,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+/**
+ * Resolves file paths / download URLs for deployment flexibility.
+ * Handles both relative paths and absolute backend URLs (e.g. cross-domain deployments).
+ */
+export const getFileUrl = (filePath: string): string => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl && (envApiUrl.startsWith('http://') || envApiUrl.startsWith('https://'))) {
+    try {
+      const origin = new URL(envApiUrl).origin;
+      return `${origin}${cleanPath}`;
+    } catch {
+      return cleanPath;
+    }
+  }
+  return cleanPath;
+};
 
 // Intercept requests to attach JWT
 api.interceptors.request.use((config) => {

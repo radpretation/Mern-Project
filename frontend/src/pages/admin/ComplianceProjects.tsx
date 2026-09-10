@@ -1,0 +1,347 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, Plus, Calendar, Eye, X, ArrowRight } from 'lucide-react';
+import api from '../../services/api';
+import { toast } from 'sonner';
+
+export const ComplianceProjects: React.FC = () => {
+  const navigate = useNavigate();
+  const [projects, setProjects] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [qsas, setQsas] = useState<any[]>([]);
+  const [qas, setQas] = useState<any[]>([]);
+  const [consultants, setConsultants] = useState<any[]>([]);
+  const [customerProcesses, setCustomerProcesses] = useState<any[]>([]);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const [formData, setFormData] = useState({
+    serviceId: 1,
+    customerId: '',
+    processId: '',
+    qsaId: '',
+    qaId: '',
+    consultantId: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [projRes, servRes, custRes, qsaRes, qaRes, consRes] = await Promise.all([
+        api.get('/admin/compliance-projects'),
+        api.get('/admin/compliance-services'),
+        api.get('/admin/customers'),
+        api.get('/admin/assessors?userType=2'),
+        api.get('/admin/assessors?userType=3'),
+        api.get('/admin/assessors?userType=4'),
+      ]);
+
+      setProjects(projRes.data.projects);
+      setServices(servRes.data.services);
+      setCustomers(custRes.data.customers);
+      setQsas(qsaRes.data.assessors);
+      setQas(qaRes.data.assessors);
+      setConsultants(consRes.data.assessors);
+    } catch (err: any) {
+      toast.error('Failed to load project records.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleCustomerSelect = async (custId: string) => {
+    setFormData((prev) => ({ ...prev, customerId: custId, processId: '' }));
+    if (!custId) {
+      setCustomerProcesses([]);
+      return;
+    }
+    try {
+      const res = await api.get(`/admin/customers/${custId}/processes`);
+      if (res.data.success) {
+        setCustomerProcesses(res.data.processes);
+      }
+    } catch {
+      toast.error('Failed to load processes for customer.');
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/admin/compliance-projects', formData);
+      if (res.data.success) {
+        toast.success('Compliance project mapping created.');
+        setCreateModalOpen(false);
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create project mapping.');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">5-Party Compliance Engagements</h2>
+          <p className="text-sm text-slate-500 font-medium">
+            Map frameworks (PCI DSS, ISO, HIPAA) to Customer processes, QSA assessors, QA teams, and Consultants.
+          </p>
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold text-xs shadow-xs flex items-center space-x-2 transition"
+        >
+          <Plus className="w-4 h-4 text-white" />
+          <span>Assign New Project</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+              <tr>
+                <th className="py-3.5 px-4">Framework Standard</th>
+                <th className="py-3.5 px-4">Customer & Scope</th>
+                <th className="py-3.5 px-4">Assigned QSA</th>
+                <th className="py-3.5 px-4">Assigned QA</th>
+                <th className="py-3.5 px-4">Assigned Consultant</th>
+                <th className="py-3.5 px-4">Milestone Dates</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400">
+                    Loading compliance projects...
+                  </td>
+                </tr>
+              ) : projects.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400">
+                    No compliance projects assigned yet.
+                  </td>
+                </tr>
+              ) : (
+                projects.map((p) => {
+                  const serviceName =
+                    services.find((s) => s.legacyId === p.serviceId)?.serviceName || `Standard #${p.serviceId}`;
+                  return (
+                    <tr
+                      key={p._id}
+                      className="hover:bg-slate-50/80 transition cursor-pointer group"
+                      onClick={() => navigate(`/admin/compliances/${p._id}`)}
+                    >
+                      <td className="py-3.5 px-4">
+                        <span className="font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                          {serviceName}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div>
+                          <span className="font-bold text-slate-900">{p.customerId?.companyName || p.customerId?.fullName}</span>
+                          <p className="text-[11px] text-slate-500 font-medium">{p.processId?.processName}</p>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-medium">{p.qsaId?.fullName || '—'}</td>
+                      <td className="py-3.5 px-4 text-slate-700 font-medium">{p.qaId?.fullName || '—'}</td>
+                      <td className="py-3.5 px-4 text-slate-700 font-medium">{p.consultantId?.fullName || '—'}</td>
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {p.startDate || p.endDate ? (
+                          <span className="text-[11px]">
+                            {p.startDate} &rarr; {p.endDate}
+                          </span>
+                        ) : (
+                          'Active'
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => navigate(`/admin/compliances/${p._id}`)}
+                          className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-semibold rounded-lg text-xs transition inline-flex items-center space-x-1 shadow-2xs"
+                          title="View & Audit Compliance Project"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-sky-600" />
+                          <span>Audit View</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Assign Project Modal */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900">Assign Compliance Project</h3>
+              <button onClick={() => setCreateModalOpen(false)}>
+                <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700">Compliance Standard</label>
+                <select
+                  required
+                  value={formData.serviceId}
+                  onChange={(e) => setFormData({ ...formData, serviceId: Number(e.target.value) })}
+                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 font-semibold"
+                >
+                  {services.map((s) => (
+                    <option key={s._id} value={s.legacyId}>
+                      {s.serviceName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700">Customer Organization</label>
+                  <select
+                    required
+                    value={formData.customerId}
+                    onChange={(e) => handleCustomerSelect(e.target.value)}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.companyName || c.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700">Audit Process / Scope</label>
+                  <select
+                    required
+                    disabled={customerProcesses.length === 0}
+                    value={formData.processId}
+                    onChange={(e) => setFormData({ ...formData, processId: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  >
+                    <option value="">Select Process Scope</option>
+                    {customerProcesses.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.processName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700">Assigned QSA</label>
+                  <select
+                    required
+                    value={formData.qsaId}
+                    onChange={(e) => setFormData({ ...formData, qsaId: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  >
+                    <option value="">Select QSA</option>
+                    {qsas.map((q) => (
+                      <option key={q._id} value={q._id}>
+                        {q.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700">Assigned QA</label>
+                  <select
+                    required
+                    value={formData.qaId}
+                    onChange={(e) => setFormData({ ...formData, qaId: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  >
+                    <option value="">Select QA</option>
+                    {qas.map((qa) => (
+                      <option key={qa._id} value={qa._id}>
+                        {qa.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700">Consultant</label>
+                  <select
+                    required
+                    value={formData.consultantId}
+                    onChange={(e) => setFormData({ ...formData, consultantId: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  >
+                    <option value="">Select Consultant</option>
+                    {consultants.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700">Audit Start Date</label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700">Audit Completion Target</label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl shadow-xs"
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

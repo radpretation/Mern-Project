@@ -1,0 +1,260 @@
+import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { User } from '../models/User';
+import { UserStatus } from '../constants/roles';
+import { computeDeviceFingerprint } from '../utils/deviceFingerprint';
+import { mailService } from '../services/mailService';
+import { AuthRequest } from '../middleware/authMiddleware';
+
+export class AuthController {
+  public async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password, certificateKey } = req.body;
+
+      if (!email || !password) {
+        res.status(400).json({ success: false, message: 'Email and password are required.' });
+        return;
+      }
+
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        return;
+      }
+
+      if (user.status === UserStatus.INACTIVE) {
+        res.status(403).json({ success: false, message: 'Your account has been inactive. Please contact administrator.' });
+        return;
+      }
+
+      if (user.status === UserStatus.DELETE) {
+        res.status(403).json({ success: false, message: 'Your account has been deleted.' });
+        return;
+      }
+
+      // Password verification: checks bcrypt, or legacy MD5 if migrating
+      let isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
+
+      if (!isPasswordMatch && user.legacyMd5Hash) {
+        const md5Input = crypto.createHash('md5').update(password).digest('hex');
+        if (md5Input === user.legacyMd5Hash) {
+          isPasswordMatch = true;
+          // Upgrade to bcrypt
+          user.passwordHash = await bcrypt.hash(password, 10);
+          await user.save();
+        }
+      }
+
+      if (!isPasswordMatch) {
+        res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        return;
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      // Sign JWT
+      const secret = process.env.JWT_SECRET || 'panacea_infosec_jwt_super_secret_key_2026_!@#';
+      const token = jwt.sign(
+        {
+          id: user._id,
+          userType: user.userType,
+          email: user.email,
+          fullName: user.fullName,
+        },
+        secret,
+        { expiresIn: '7d' }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          id: user._id,
+          legacyId: user.legacyId,
+          fullName: user.fullName,
+          email: user.email,
+          userType: user.userType,
+          companyName: user.companyName,
+          companyNumber: user.companyNumber,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          isCertificateVerified: user.isCertificateVerified,
+          permissions: user.permissions,
+        },
+      });
+    } catch (error: any) {
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, message: 'An internal error occurred during login.' });
+    }
+  }
+
+  public async getMe(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Not authenticated' });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        user: {
+          id: user._id,
+          legacyId: user.legacyId,
+          fullName: user.fullName,
+          email: user.email,
+          userType: user.userType,
+          companyName: user.companyName,
+          companyNumber: user.companyNumber,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          isCertificateVerified: user.isCertificateVerified,
+          permissions: user.permissions,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  public async installCertificate(req: Request, res: Response): Promise<void> {
+    try {
+      let certificateContent = '';
+
+      if (req.file) {
+        certificateContent = req.file.buffer.toString('utf-8').trim();
+      } else if (req.body.certificateContent) {
+        certificateContent = String(req.body.certificateContent).trim();
+      }
+
+      if (!certificateContent) {
+        res.status(400).json({ success: false, message: 'Certificate file or content is required.' });
+        return;
+      }
+
+      const deviceFingerprint = computeDeviceFingerprint(req);
+      const boundToken = `${certificateContent}${deviceFingerprint}`;
+
+      // Set cookie for browser parity
+      res.cookie('certificate_key', boundToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        sameSite: 'lax',
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Device certificate installed and bound to this workstation successfully.',
+        deviceFingerprint,
+        boundToken,
+      });
+    } catch (error: any) {
+      console.error('Install certificate error:', error);
+      res.status(500).json({ success: false, message: 'Failed to process workstation certificate.' });
+    }
+  }
+
+  public async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ success: false, message: 'Email address is required.' });
+        return;
+      }
+
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      if (!user || user.status !== UserStatus.ACTIVE) {
+        res.status(404).json({ success: false, message: 'No active account found with this email address.' });
+        return;
+      }
+
+      // Generate 6-char random password matching legacy random_string('alnum', 6)
+      const temporaryPassword = crypto.randomBytes(3).toString('hex').toLowerCase();
+      user.passwordHash = await bcrypt.hash(temporaryPassword, 10);
+      user.pwdString = temporaryPassword;
+      user.legacyMd5Hash = crypto.createHash('md5').update(temporaryPassword).digest('hex');
+      await user.save();
+
+      await mailService.sendPasswordResetMail(user.email, user.fullName, temporaryPassword);
+
+      res.status(200).json({
+        success: true,
+        message: 'A new temporary password has been generated and sent to your email address.',
+      });
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ success: false, message: 'Failed to process password reset request.' });
+    }
+  }
+
+  public async changePassword(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = req.user;
+
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Not authenticated' });
+        return;
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        res.status(400).json({ success: false, message: 'Current password does not match.' });
+        return;
+      }
+
+      user.passwordHash = await bcrypt.hash(newPassword, 10);
+      user.pwdString = newPassword;
+      user.legacyMd5Hash = crypto.createHash('md5').update(newPassword).digest('hex');
+      await user.save();
+
+      res.status(200).json({ success: true, message: 'Password updated successfully.' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  public async updateProfile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { fullName, phoneNumber, companyName, companyNumber, address } = req.body;
+      const user = req.user;
+
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Not authenticated' });
+        return;
+      }
+
+      if (fullName) user.fullName = fullName;
+      if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+      if (companyName !== undefined) user.companyName = companyName;
+      if (companyNumber !== undefined) user.companyNumber = companyNumber;
+      if (address !== undefined) user.address = address;
+
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully.',
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          userType: user.userType,
+          phoneNumber: user.phoneNumber,
+          companyName: user.companyName,
+          companyNumber: user.companyNumber,
+          address: user.address,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+}
+
+export const authController = new AuthController();

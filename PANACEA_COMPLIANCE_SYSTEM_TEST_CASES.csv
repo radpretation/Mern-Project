@@ -1,0 +1,149 @@
+"Module Number","Module Category","Test Case ID","Test Scenario","Preconditions","Test Steps","Expected Result","Severity","Status","Tester Notes"
+"Module 1","Authentication, Authorization & RBAC","AUTH-01","Super Admin Login","Admin credentials exist in MongoDB","1. Navigate to `/login`
+2. Enter admin email and valid password
+3. Submit form","JWT token stored in `localStorage`, user redirected to `/admin/dashboard`.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-02","Customer (POC) Login","Customer account exists","1. Enter customer email & password
+2. Submit form","Redirected to `/customer/dashboard`.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-03","QSA Assessor Login","QSA user exists","1. Enter QSA email & password
+2. Submit form","Redirected to `/qsa/dashboard`.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-04","QA Auditor Login","QA user exists","1. Enter QA email & password
+2. Submit form","Redirected to `/qa/dashboard`.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-05","Consultant Login","Consultant user exists","1. Enter consultant email & password
+2. Submit form","Redirected to `/consultant/dashboard`.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-06","Invalid Credentials","Any role","1. Enter incorrect password or unregistered email
+2. Submit form","Error toast: *""Invalid email or password.""* Access denied.","High","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-07","Deactivated / Deleted Account Login","User with `status = 'delete'` or `status = 'inactive'`","1. Attempt login with deleted user credentials","HTTP 401 with message: *""Your account has been deactivated or removed.""*","High","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-08","Unauthorized Route Access","Logged in as Customer","1. Manually type URL `http://localhost:5173/admin/customers`","Route guard blocks access and redirects to customer portal or displays 403 Forbidden.","Critical","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-09","Token Expiration Handling","Active session","1. Expire JWT token or clear token
+2. Make an API request","API interceptor catches HTTP 401, clears local storage, and redirects to `/login`.","Medium","Pending",""
+"Module 1","Authentication, Authorization & RBAC","AUTH-10","Password Change / Profile Update","Any authenticated user","1. Navigate to `/profile`
+2. Enter current password & new password
+3. Submit","Password updated; next login requires new password.","Medium","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-01","Create New Customer Organization","Admin logged in","1. Go to Customers Management (`/admin/customers`)
+2. Click Add New Customer
+3. Fill Company Name, Number, Address, POC Name, Email, Phone
+4. Submit form","New customer created in database, welcome email simulated, customer appears in table.","Critical","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-02","Duplicate Customer Email Validation","Customer email already exists","1. Fill customer form with existing email
+2. Submit","Form rejected with error: *""Email address is already in use.""*","High","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-03","Customer Scope / Process Creation","Customer exists","1. Click Manage Scopes/Processes on customer row
+2. Enter Process Name (e.g., `Cardholder Data Environment`)
+3. Click Add","Process added to customer under active status (`status = 0`).","Critical","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-04","Process Archival","Process exists","1. Click Archive Process
+2. Confirm dialog","Process moves from active list to Archived Processes collection (`status = 1`).","High","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-05","View Archived Processes","Processes archived","1. Navigate to Archived Processes (`/admin/archived-processes`)","Displays historical processes with customer name, company, and archive date.","Medium","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-06","Reveal Customer Plaintext Password","Admin logged in","1. Click Reveal Password (Eye icon)
+2. Enter Super Admin password
+3. Click Verify","Super Admin password verified with bcrypt; modal displays target user's plaintext password.","High","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-07","Reveal Password Security Check","Admin logged in","1. Click Reveal Password
+2. Enter incorrect Super Admin password","Modal shows error: *""Invalid Admin password.""* Password not shown.","High","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-08","Download Customer Device Certificate","Customer exists","1. Click Download Certificate (Download icon)","Downloads `certificate.txt` with formatted RSA public key string.","Medium","Pending",""
+"Module 2","Super Administrator — Customer & Process Scope Management","CUST-09","Soft Delete Customer Account","Customer exists","1. Click Delete Customer
+2. Confirm","Customer `status` set to `UserStatus.DELETE`. Customer disappears from active listing.","High","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-01","Create QSA Assessor","Admin logged in","1. Go to Auditors (QSA / QA / Cons) (`/admin/assessors`)
+2. Click Add New Assessor
+3. Select Role = QSA Assessor
+4. Fill Name, Email, Phone, Password
+5. Submit","New QSA created with `userType = 2`. Displays with green `QSA Assessor` badge.","Critical","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-02","Create QA Auditor","Admin logged in","1. Click Add New Assessor -> Select Role = QA Auditor
+2. Fill details & submit","Created with `userType = 3`. Displays with indigo `QA Auditor` badge.","Critical","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-03","Create Compliance Consultant","Admin logged in","1. Click Add New Assessor -> Select Role = Consultant
+2. Fill details & submit","Created with `userType = 4`. Displays with amber `Consultant` badge.","Critical","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-04","Filter Assessors by Role Tabs","Assessors created","1. Click QSA Assessors tab
+2. Click QA Auditors tab
+3. Click Consultants tab
+4. Click All Assessors","Table filters dynamically to show only the selected role designation.","Medium","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-05","Assignment Guard: Attempt Delete on Assigned Assessor","Assessor assigned to an active Compliance/Testing project","1. Click Delete (Trash icon) on the assigned assessor (e.g., `Test Consultant`)","Modal checks assignment status; displays 🛡️ Cannot Delete Assessor warning showing assigned project name(s); ""Confirm Delete"" button is hidden.","Blocker / Critical","Pending",""
+"Module 3","Super Administrator — Security Assessors & Project Assignment Guard","ASSR-06","Delete Unassigned Assessor","Assessor has no project mappings","1. Click Delete (Trash icon) on unassigned assessor","Modal displays confirmation dialog: *""Are you sure you want to delete [Name]?""*; clicking Confirm Delete removes the assessor and refreshes table.","Critical","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-01","Create Compliance Project Mapping","Customer, Process, QSA, QA, Consultant exist","1. Navigate to Compliance Projects (`/admin/compliance-projects`)
+2. Click New Project Assignment
+3. Select Framework, Customer, Scope, QSA, QA, Consultant, Dates
+4. Submit","New project created; unique index (`serviceId + customerId + processId`) enforced.","Critical","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-02","Prevent Duplicate Project Scope Mapping","Project mapping exists","1. Attempt to create project with exact same Framework, Customer, and Scope","Backend returns HTTP 400: *""This compliance project mapping already exists.""*","High","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-03","Dynamic Project Progress & Approval Counter","Project has 140 questions","1. Open Project Workspace (`/admin/compliance-projects/:id/details`)
+2. View status badge in top header and milestone card","Live badge accurately shows e.g., `In Progress (45/140 Approved)` without hardcoded numbers.","Critical","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-04","Manual Project Status Toggle","Admin logged in","1. In Project Workspace, go to Milestone tab
+2. Click Mark Completed or Mark In Progress","Status updates in DB and reflects across all auditor and customer dashboards.","High","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-05","Record Project End Date","Admin logged in","1. Enter Target End Date in datepicker
+2. Click Save Date","End date recorded without erroneously forcing status to Completed.","High","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-06","Upload ROC Compliance Report","Admin logged in","1. Click Upload ROC
+2. Select valid PDF file (< 50MB)
+3. Click Upload","PDF uploaded to `uploads/report/`, report record created; ROC report becomes downloadable.","Critical","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-07","Upload AOC Compliance Report","Admin logged in","1. Click Upload AOC
+2. Select valid PDF file
+3. Click Upload","AOC report attached and made available for customer attestation.","Critical","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-08","Reject Non-PDF Report Files","Admin logged in","1. Try uploading `.exe`, `.docx`, or `.png` to ROC/AOC","Multer filter rejects file: *""Only PDF documents are allowed for ROC / AOC compliance reports.""*","Medium","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-09","Batch Control Status Update from Admin","Admin logged in","1. Check multiple questions in matrix
+2. Click Admin Batch Approve / Disapprove","Selected questions updated simultaneously in `EvidenceReview` collection.","High","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-10","QA Modification Approval Flow","QA requested modification","1. In question card, view QA Modification banner
+2. Click Accept or Reject","Modification status resolved; audit trail updated.","High","Pending",""
+"Module 4","Super Administrator — Compliance Project Workspace & Reporting","PROJ-11","Customer Modification Approval Flow","Customer requested modification","1. In question card, view Customer Modification banner
+2. Click Accept or Reject","Scope modification resolved; audit trail updated.","High","Pending",""
+"Module 5","Super Administrator — Questionnaire Controls & Checklist Management","QSTN-01","View Questions by Framework","Frameworks exist","1. Navigate to Questionnaires / Controls (`/admin/questionnaires`)
+2. Switch Compliance Framework dropdown (e.g., PCI DSS, ISO 27001)","Table updates to list all control questions for the selected framework with sequential numbering.","Critical","Pending",""
+"Module 5","Super Administrator — Questionnaire Controls & Checklist Management","QSTN-02","Add New Control Question","Admin logged in","1. Click `+ Add New Question` in top header
+2. Select Framework (e.g., `PCI DSS`)
+3. Enter Requirement Description
+4. Select Status = `Active`
+5. Click Save Question","Next `legacyId` calculated; new control saved and immediately listed in table.","Critical","Pending",""
+"Module 5","Super Administrator — Questionnaire Controls & Checklist Management","QSTN-03","In-Line Edit Question Text","Question exists","1. Click Edit (Pencil icon) on question row
+2. Modify requirement text
+3. Click Save (Disk icon)","Text updated in MongoDB; toast notification: *""Question text updated.""*","High","Pending",""
+"Module 5","Super Administrator — Questionnaire Controls & Checklist Management","QSTN-04","Batch Question Activation","Inactive questions exist","1. Select checkboxes for questions
+2. Click Activate Selected","Questions set to `status = '1'` (Active).","Medium","Pending",""
+"Module 5","Super Administrator — Questionnaire Controls & Checklist Management","QSTN-05","Batch Question Deactivation","Active questions exist","1. Select checkboxes for questions
+2. Click Deactivate Selected","Questions set to `status = '2'` (Inactive). Excluded from new projects.","Medium","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-01","View Assigned Audit Requirements","Customer logged in","1. Go to Dashboard -> Click active process scope
+2. Open Compliance Evidence Review (`/customer/evidence/audit-view`)","Displays full matrix of requirements with status badges, evidence uploads, and comments.","Critical","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-02","Single / Multiple Evidence File Upload","Question requirement open","1. Expand a control card
+2. Choose files (PDF, PNG, JPG, DOCX, ZIP)
+3. Add evidence note
+4. Click Submit Evidence","Files uploaded to `uploads/evidence/`; `EvidenceDoc` records created; status updates.","Critical","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-03","Download Uploaded Evidence Artifact","Evidence exists","1. Click on evidence filename link","File downloads via `/api/files/download?path=evidence/...`.","High","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-04","Delete Uploaded Evidence Artifact","Customer uploaded evidence","1. Click Delete (Trash icon) on evidence file
+2. Confirm","File record deleted from MongoDB and removed from matrix.","Medium","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-05","Request Control Scope Modification","Requirement open","1. Click Request Modification button on a control","`cusModification = 1` set; amber ""Modification Requested"" badge displayed; flagged to Admin.","High","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-06","Post Evidence Clarification Comment","Requirement open","1. In Threaded Comments section, enter message
+2. Click Send Comment","Message appended in chronological order with customer timestamp.","High","Pending",""
+"Module 6","Customer / Client POC — Evidence Submission & Attestation","POC-07","Download Final ROC / AOC Reports","Admin uploaded ROC/AOC","1. Navigate to Attestation Reports (`/customer/reports`)
+2. Click Download ROC or Download AOC","Attestation report PDF downloads successfully.","Critical","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-01","Access QSA Assessment Matrix","QSA assigned to project","1. Go to QSA Dashboard (`/qsa/dashboard`)
+2. Click Review Audit for project","Opens QSA Security Assessment Matrix (`/qsa/audit-view`) with all customer evidence.","Critical","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-02","Evaluate Evidence & Approve Control","Requirement open","1. Inspect customer evidence documents
+2. Click Approve (Mark Complete)","QSA status set to Approved (`1`), overall status set to `1` (Assigned to QA Review).","Critical","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-03","Disapprove Control / Request Remediation","Requirement open","1. Click Disapprove (Reject)
+2. Add review note explaining remediation needed","QSA status set to Disapproved (`2`); badge shows red `QSA Disapproved`.","High","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-04","Mark Control Incomplete","Requirement open","1. Click Mark Incomplete","Status set to `3` (`In Progress / Incomplete`).","Medium","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-05","Upload Assessor Working Papers / Samples","Control expanded","1. In Assessor Workpapers section, choose sample artifacts
+2. Click Upload Samples","Files stored under `uploads/supplementary/`; accessible to QA and Admin.","High","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-06","Delete Assessor Working Paper","Paper exists","1. Click Delete on working paper item","File record deleted; list updates optimistically.","Medium","Pending",""
+"Module 7","QSA Assessor — Security Assessment & Working Papers","QSA-07","Request QSA Scope Modification","QSA logged in","1. Click Request Scope Modification button","`qsaModification = 1` set; notified to Admin.","Medium","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-01","Open QA Verification Matrix","QA assigned to project","1. Go to QA Dashboard -> Click project review","Opens `/qa/audit-view` displaying customer evidence, QSA verdict, and working papers.","Critical","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-02","Individual Control Sign-Off","Control expanded","1. Verify QSA sample & customer policy
+2. Click QA Approve","Control status set to `4` (`QA Approved`).","Critical","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-03","QA Disapprove Control","Control expanded","1. Click QA Disapprove","Control status set to `5` (`QA Disapproved`). Returned for assessor remediation.","High","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-04","Batch QA Approval","Multiple controls in QA queue","1. Check multiple control checkboxes
+2. Click Batch Approve","All selected controls set to `QA Approved (4)` simultaneously.","Critical","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-05","Batch QA Disapproval / Incomplete","Controls selected","1. Check multiple checkboxes
+2. Click Batch Disapprove or Batch Incomplete","All selected items updated in batch; toast confirmation displayed.","High","Pending",""
+"Module 8","QA Reviewer — Quality Assurance & Batch Approvals","QA-06","Request QA Scope Modification","QA logged in","1. Click Request QA Modification","Sets `qaModification = 1`; routes to Super Admin approval.","Medium","Pending",""
+"Module 9","Consultant — Advisory Workspace & Pre-Audit Readiness","CONS-01","Open Advisory Workspace","Consultant assigned","1. Go to Consultant Dashboard -> Open workspace","Opens `/consultant/audit-view` showing customer evidence readiness.","Critical","Pending",""
+"Module 9","Consultant — Advisory Workspace & Pre-Audit Readiness","CONS-02","Update Advisory Readiness Status","Control open","1. Review draft evidence
+2. Click Mark Ready (Accept) or Needs Work","Updates `consultantStatus` (`1 = Ready`, `2 = Needs Work`).","High","Pending",""
+"Module 9","Consultant — Advisory Workspace & Pre-Audit Readiness","CONS-03","Upload Guidance Artifacts","Control expanded","1. Upload sample policy template / gap analysis notes","Uploaded and visible to client as consultant advisory guidance.","High","Pending",""
+"Module 9","Consultant — Advisory Workspace & Pre-Audit Readiness","CONS-04","Post Advisory Recommendation","Control expanded","1. Add comment in threaded chat","Clarification saved and visible to customer and assessor teams.","Medium","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-01","Filter: All Controls","Audit View open (POC / QSA / QA / Consultant / Admin)","1. Click All Controls tab","Displays all controls for the project with total count badge.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-02","Filter: Pending Submission","Unsubmitted controls exist","1. Click Pending Submission tab","Displays only controls with `allStatus = 0` or unsubmitted status.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-03","Filter: QSA Approved","Controls approved by QSA exist","1. Click QSA Approved tab","Displays only controls where `allStatus = 1`.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-04","Filter: QA Approved","Controls approved by QA exist","1. Click QA Approved tab","Displays only controls where `allStatus = 4` or `allStatus = 7`.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-05","Filter: Modification Requested","Modification requests exist","1. Click Modification Requested tab","Displays controls where `cusModification = 1` or `qsaModification = 1`.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-06","Filter: In Progress","In-progress controls exist","1. Click In Progress tab","Displays controls where `allStatus = 3`.","Medium","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-07","Filter: Disapproved / Incomplete","Disapproved controls exist","1. Click Disapproved / Incomplete tab","Displays controls with `allStatus` in `[2, 5, 6, 8, 9]`.","High","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-08","Sequential Numbering Integrity","Any filter tab active","1. Filter by `QA Approved` or `Pending Submission`
+2. Inspect number badges on questions","Each question displays its true master index (e.g., `Question 1`, `Question 4`, `Question 140`) without jumping from 100 to 1111.","Critical","Pending",""
+"Module 10","Cross-Role Filter Tabs & Sequential Control Numbering","FLTR-09","Empty Filter State","Filter with 0 matches","1. Click a filter with 0 items","Displays clean empty state: *""No requirements found in the '[Tab Name]' filter.""*","Medium","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-01","JWT Authentication Header Injection","User logged in","1. Inspect outgoing Axios requests in Network tab","`Authorization: Bearer <token>` header attached on all protected API calls.","Critical","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-02","Password Hash Salt & Verification","User created","1. Inspect `passwordHash` field in MongoDB `users` collection","Stored as bcrypt 10-round salted hash; original password never stored in plaintext `passwordHash`.","Critical","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-03","File Traversal Protection","Attacker attempts path traversal","1. Attempt requesting `/api/files/download?path=../../etc/passwd`","Path resolved strictly within sanitized base upload directory; unauthorized access rejected.","Critical","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-04","Upload File Size Limit Enforcement","Uploading evidence/reports","1. Attempt uploading file > 50MB","Request rejected with HTTP 413 or Multer size limit error.","Medium","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-05","MongoDB Unique Compound Indices","Database initialized","1. Query indices on `complianceprojects`, `customerprocesses`, and `users`","Indexes `{ serviceId: 1, customerId: 1, processId: 1 }` and `email` strictly prevent orphaned or duplicate records.","High","Pending",""
+"Module 11","Security, Storage & Edge Case Validations","SEC-06","XSS / HTML Injection in Requirement Text","Admin creating question","1. Input `<script>alert('xss')</script>` in question text","React JSX automatically escapes input; rendered safely as plain string text.","High","Pending",""

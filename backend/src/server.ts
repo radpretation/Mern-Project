@@ -56,18 +56,37 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Connect Database & Start Server
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
+// Connect Database
+let isConnecting = false;
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1 || isConnecting) return;
+  isConnecting = true;
+  try {
+    await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB database:', MONGODB_URI);
-    app.listen(PORT, () => {
-      console.log(`🚀 Panacea Backend Server running on http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('Failed to connect to MongoDB:', err);
-    process.exit(1);
+  } finally {
+    isConnecting = false;
+  }
+};
+
+// Initiate connection immediately
+connectDB();
+
+// Ensure DB is connected before processing requests
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState === 0) {
+    await connectDB();
+  }
+  next();
+});
+
+// Start listening in standalone/local environments
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Panacea Backend Server running on http://localhost:${PORT}`);
   });
+}
 
 export default app;

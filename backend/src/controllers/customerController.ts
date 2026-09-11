@@ -219,9 +219,32 @@ export class CustomerController {
   public async deleteEvidenceDoc(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const user = req.user!;
+      const customerId = user.parentId || user._id;
+
       const doc = await EvidenceDocument.findById(id);
       if (!doc) {
         res.status(404).json({ success: false, message: 'Document not found.' });
+        return;
+      }
+
+      // Precondition 1: Cross-Tenant Ownership Check
+      if (doc.customerId.toString() !== customerId.toString()) {
+        res.status(403).json({ success: false, message: 'Unauthorized. You can only delete evidence documents belonging to your company.' });
+        return;
+      }
+
+      // Precondition 2: Audit Trail Integrity Guard (Cannot delete if control is already approved)
+      const review = await EvidenceReview.findOne({
+        questionnaireId: doc.questionnaireId,
+        customerId,
+      });
+
+      if (review && (review.allStatus === 1 || review.allStatus === 4 || review.allStatus === 7)) {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot delete evidence for a control that has already been approved by QSA or QA auditor. Please submit a modification request instead.',
+        });
         return;
       }
 

@@ -41,11 +41,25 @@ const createMulterStorage = (subfolder: string) =>
     },
   });
 
-export const uploadEvidenceStorage = multer({ storage: createMulterStorage('evidence') });
-export const uploadQsaStorage = multer({ storage: createMulterStorage('qsa') });
-export const uploadQaStorage = multer({ storage: createMulterStorage('qa') });
-export const uploadConsultantStorage = multer({ storage: createMulterStorage('consultants') });
-export const uploadReportStorage = multer({ storage: createMulterStorage('report') });
+// Allowed evidence file extensions and MIME types
+const ALLOWED_EVIDENCE_EXTS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.png', '.jpg', '.jpeg', '.txt', '.zip', '.rar', '.7z'];
+
+export const uploadEvidenceStorage = multer({
+  storage: createMulterStorage('evidence'),
+  limits: { fileSize: 50 * 1024 * 1024, files: 10 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ALLOWED_EVIDENCE_EXTS.includes(ext) || file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error(`File format '${ext}' is not supported. Allowed formats: PDF, DOC/DOCX, XLS/XLSX, CSV, Images (PNG/JPG), and ZIP/RAR archives.`));
+    }
+  },
+});
+export const uploadQsaStorage = multer({ storage: createMulterStorage('qsa'), limits: { fileSize: 50 * 1024 * 1024 } });
+export const uploadQaStorage = multer({ storage: createMulterStorage('qa'), limits: { fileSize: 50 * 1024 * 1024 } });
+export const uploadConsultantStorage = multer({ storage: createMulterStorage('consultants'), limits: { fileSize: 50 * 1024 * 1024 } });
+export const uploadReportStorage = multer({ storage: createMulterStorage('report'), limits: { fileSize: 50 * 1024 * 1024 } });
 export const uploadMemoryStorage = multer({ storage: multer.memoryStorage() });
 
 export class FileController {
